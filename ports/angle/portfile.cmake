@@ -99,7 +99,7 @@ set(_renderer_gn_files_to_convert
   "libANGLE/renderer/metal/BUILD.gn Metal.cmake"
 )
 
-x_vcpkg_get_python_packages(PYTHON_EXECUTABLE "${PYTHON3}" PACKAGES ply)
+x_vcpkg_get_python_packages(PYTHON_EXECUTABLE "${PYTHON3}" PACKAGES ply argparse)
 
 foreach(_root_gni_file IN LISTS _root_gni_files_to_convert)
   separate_arguments(_file_values UNIX_COMMAND "${_root_gni_file}")
@@ -156,6 +156,68 @@ file(COPY ${MAIN_BUILDSYSTEM} DESTINATION "${SOURCE_PATH}")
 file(GLOB MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake-buildsystem/cmake/*.cmake")
 file(COPY ${MODULES} DESTINATION "${SOURCE_PATH}/cmake")
 
+set(WINAPPSDK_DIR "${SOURCE_PATH}/third_party/WindowsAppSDK")
+
+#vcpkg_execute_required_process(
+#  COMMAND "${PYTHON3}" "scripts/winappsdk_setup.py" "--version" "1.4.231219000" "--output" "${WINAPPSDK_DIR}"
+#  WORKING_DIRECTORY "${SOURCE_PATH}"
+#  LOGNAME "download-windowsappsdk-${TARGET_TRIPLET}"
+#)
+
+set(WINDOWS_APP_SDK_VERSION 1.5.240627000)
+
+vcpkg_find_acquire_program(NUGET)
+vcpkg_execute_required_process(COMMAND ${NUGET} install Microsoft.WindowsAppSDK
+        -Version ${WINDOWS_APP_SDK_VERSION}
+        -OutputDirectory ${SOURCE_PATH}/WindowsAppSDK
+    WORKING_DIRECTORY ${SOURCE_PATH}
+)
+
+vcpkg_execute_required_process(COMMAND winmdidl /nologo /outdir:.
+        ../lib/uap10.0.18362/Microsoft.Foundation.winmd
+    WORKING_DIRECTORY ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include
+)
+
+vcpkg_execute_required_process(COMMAND winmdidl /nologo /outdir:.
+        ../lib/uap10.0.18362/Microsoft.Graphics.winmd
+    WORKING_DIRECTORY ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include
+)
+
+vcpkg_execute_required_process(COMMAND winmdidl /nologo /outdir:.
+        ../lib/uap10.0.18362/Microsoft.UI.winmd
+    WORKING_DIRECTORY ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include
+)
+
+vcpkg_execute_required_process(COMMAND winmdidl /nologo /outdir:.
+        ../lib/uap10.0/Microsoft.UI.Text.winmd
+    WORKING_DIRECTORY ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include
+)
+
+vcpkg_execute_required_process(COMMAND winmdidl /nologo /outdir:.
+        ../lib/uap10.0/Microsoft.Web.WebView2.Core.winmd
+    WORKING_DIRECTORY ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include
+)
+
+vcpkg_execute_required_process(COMMAND winmdidl /nologo /outdir:.
+        ../lib/uap10.0/Microsoft.Windows.ApplicationModel.Resources.winmd
+    WORKING_DIRECTORY ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include
+)
+
+vcpkg_execute_required_process(COMMAND winmdidl /nologo /outdir:.
+        ../lib/uap10.0/Microsoft.UI.Xaml.winmd
+    WORKING_DIRECTORY ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include
+)
+
+file(GLOB IDL_FILES "${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include/*.idl")
+foreach(IDL_FILE ${IDL_FILES})
+    get_filename_component(IDL_FILE_NAME "${IDL_FILE}" NAME)
+    vcpkg_execute_required_process(COMMAND midlrt ${IDL_FILE_NAME} /metadata_dir C:\\Windows\\System32\\WinMetadata /ns_prefix /nomidl
+        WORKING_DIRECTORY ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION}/include
+    )
+endforeach()
+
+file(RENAME ${SOURCE_PATH}/WindowsAppSDK/Microsoft.WindowsAppSDK.${WINDOWS_APP_SDK_VERSION} ${WINAPPSDK_DIR})
+
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS_DEBUG -DDISABLE_INSTALL_HEADERS=1
@@ -164,6 +226,8 @@ vcpkg_cmake_configure(
         "-DPORT=${ANGLE_BUILDSYSTEM_PORT}"
         "-DANGLE_USE_D3D11_COMPOSITOR_NATIVE_WINDOW=${ANGLE_USE_D3D11_COMPOSITOR_NATIVE_WINDOW}"
         "-DVCPKG_TARGET_IS_WINDOWS=${VCPKG_TARGET_IS_WINDOWS}"
+        "-DWINAPPSDK_DIR=${WINAPPSDK_DIR}"
+        "-DWINDOWS_ARCH=${VCPKG_TARGET_ARCHITECTURE}"
 )
 
 vcpkg_cmake_install()
@@ -188,5 +252,7 @@ endforeach()
 unset(subdirectory_children)
 unset(directory_child)
 unset(directory_children)
+
+file(INSTALL "${SOURCE_PATH}/include/angle_windowsstore.h" DESTINATION "${CURRENT_PACKAGES_DIR}/include")
 
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")

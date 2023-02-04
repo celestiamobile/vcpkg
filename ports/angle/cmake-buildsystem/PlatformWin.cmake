@@ -25,7 +25,7 @@ list(APPEND ANGLE_DEFINITIONS
     "-DANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES={ \"d3dcompiler_47.dll\", \"d3dcompiler_46.dll\", \"d3dcompiler_43.dll\" }"
 )
 
-list(APPEND ANGLEGLESv2_LIBRARIES dxguid dxgi)
+list(APPEND ANGLEGLESv2_LIBRARIES dxguid dxgi Microsoft.WindowsAppRuntime.Bootstrap Microsoft.WindowsAppRuntime WindowsApp)
 
 if(NOT angle_is_winuwp) # vcpkg EDIT: Exclude DirectX 9 on UWP
     # DirectX 9 support should be optional but ANGLE will not compile without it
