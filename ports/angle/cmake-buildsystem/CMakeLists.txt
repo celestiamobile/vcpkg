@@ -7,9 +7,7 @@ include(WebKitCommon-minimal)
 set(ANGLE_FRAMEWORK_HEADERS_DIR "${CMAKE_BINARY_DIR}/ANGLE/headers")
 
 set(USE_ANGLE_EGL ON)
-if (NOT WINDOWS_STORE)
-    set(USE_OPENGL ON)
-endif()
+set(USE_OPENGL OFF)
 
 if(MSVC)
     add_compile_options(/d2guard4 /Wv:18 /guard:cf /permissive /bigobj)
@@ -26,11 +24,7 @@ if(WIN32)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
-if (WINDOWS_STORE)
-    set(WINRT_DEFINES -DANGLE_ENABLE_WINDOWS_UWP -DWINAPI_FAMILY=WINAPI_FAMILY_PC_APP)
-else()
-    set(WINRT_DEFINES)
-endif()
+set(WINRT_DEFINES -DANGLE_ENABLE_WINDOWS_UWP -DANGLE_ENABLE_WINDOWS_APP_SDK)
 add_definitions(
     -D_CRT_SECURE_NO_DEPRECATE
     -D_SCL_SECURE_NO_WARNINGS
@@ -69,6 +63,9 @@ if(NOT BUILD_SHARED_LIBS)
     )
 endif()
 
+include_directories(${WINAPPSDK_DIR}/include)
+link_directories(${WINAPPSDK_DIR}/lib/win10-${WINDOWS_ARCH})
+
 find_package(ZLIB REQUIRED)
 
 ##################################################
@@ -94,12 +91,8 @@ if (APPLE)
     endif()
 elseif (WIN32)
     set(is_win TRUE)
-    if (NOT WINDOWS_STORE)
-        set(angle_is_winuwp FALSE)
-    else()
-        set(angle_is_winuwp TRUE)
-        set(target_os "winuwp")
-    endif()
+    set(angle_is_winuwp TRUE)
+    set(target_os "winuwp")
     if (NOT angle_is_winuwp)
         set(angle_enable_d3d9 TRUE)
     endif()
