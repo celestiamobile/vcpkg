@@ -29,7 +29,7 @@ set_target_properties(cspice PROPERTIES
 )
 
 file(GLOB SPICE_HEADERS ${INCLUDE_PATH}/*.h)
-install(FILES ${SPICE_HEADERS} DESTINATION include/cspice)
+install(FILES ${SPICE_HEADERS} DESTINATION include)
 
 install(
     TARGETS cspice
