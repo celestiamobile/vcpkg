@@ -1,14 +1,11 @@
 vcpkg_download_distfile(ARCHIVE
-    URLS "https://www.lua.org/ftp/lua-${VERSION}.tar.gz"
-    FILENAME "lua-${VERSION}.tar.gz"
-    SHA512 98c5c8978dfdf867e37e9eb3b3ec83dee92d199243b5119505da83895e33f10d43c841be6a7d3b106daba8a0b2bd25fe099ebff8f87831dcc55c79c78b97d8b8
+    URLS "https://www.lua.org/ftp/lua-5.1.5.tar.gz"
+    FILENAME "lua-5.1.5.tar.gz"
+    SHA512 0142fefcbd13afcd9b201403592aa60620011cc8e8559d4d2db2f92739d18186860989f48caa45830ff4f99bfc7483287fd3ff3a16d4dec928e2767ce4d542a9
 )
-vcpkg_extract_source_archive(
-    SOURCE_PATH
+vcpkg_extract_source_archive_ex(
+    OUT_SOURCE_PATH SOURCE_PATH
     ARCHIVE "${ARCHIVE}"
-    PATCHES
-        vs2015-impl-c99.patch
-        fix-ios-system.patch
 )
 
 file(COPY "${CMAKE_CURRENT_LIST_DIR}/CMakeLists.txt" DESTINATION "${SOURCE_PATH}")
