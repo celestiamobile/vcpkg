@@ -9,6 +9,10 @@
   "homepage": "https://github.com/google/angle",
   "license": "BSD-3-Clause",
   "dependencies": [
+    {
+      "name": "vcpkg-get-python-packages",
+      "host": true
+    },
     "egl-registry",
     {
       "name": "libx11",

@@ -9,8 +9,8 @@ list(APPEND ANGLE_DEFINITIONS
 
 # We're targeting Windows 10 which will have DirectX 11
 list(APPEND ANGLE_SOURCES
-    ${_d3d11_backend_sources}
-    ${_d3d_shared_sources}
+    ${d3d11_backend_sources}
+    ${d3d_shared_sources}
 
     ${angle_translator_hlsl_sources}
 
