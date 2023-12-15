@@ -30,11 +30,11 @@ else()
   set(ANGLE_BUILDSYSTEM_PORT "Linux")
 endif()
 
-# chromium/5414
-set(ANGLE_COMMIT aa63ea230e0c507e7b4b164a30e502fb17168c17)
-set(ANGLE_VERSION 5414)
-set(ANGLE_SHA512 a3b55d4b484e1e9ece515d60af1d47a80a0576b198d9a2397e4e68b16efd83468dcdfadc98dae57ff17f01d02d74526f8b59fdf00661b70a45b6dd266e5ffe38)
-set(ANGLE_THIRDPARTY_ZLIB_COMMIT 44d9b490c721abdb923d5c6c23ac211e45ffb1a5)
+# chromium/6589
+set(ANGLE_COMMIT 7d461b21a4a77c6d48fde1c2e2fc3676b7323642)
+set(ANGLE_VERSION 6589)
+set(ANGLE_SHA512 ff2c7bbb237292ccbd39e3223023bc600a26de02c76c95a65dc2999a626b0703c61436946a097606e35228643fcda1c1a84ecb6d720628bb387b0c5cd05ba4df)
+set(ANGLE_THIRDPARTY_ZLIB_COMMIT 68e57e619c1a59a6ba7e3ad48ad4eee9c0c5b08e)
 
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
@@ -42,10 +42,26 @@ vcpkg_from_github(
     REF ${ANGLE_COMMIT}
     SHA512 ${ANGLE_SHA512}
     # On update check headers against opengl-registry
-    PATCHES
-        001-fix-uwp.patch
-        002-fix-builder-error.patch
-        003-fix-mingw.patch
+)
+
+function(checkout_in_path PATH URL REF)
+    if(EXISTS "${PATH}")
+        file(REMOVE_RECURSE "${PATH}")
+    endif()
+
+    vcpkg_from_git(
+        OUT_SOURCE_PATH DEP_SOURCE_PATH
+        URL "${URL}"
+        REF "${REF}"
+    )
+    file(RENAME "${DEP_SOURCE_PATH}" "${PATH}")
+    file(REMOVE_RECURSE "${DEP_SOURCE_PATH}")
+endfunction()
+
+checkout_in_path(
+    "${SOURCE_PATH}/third_party/zlib"
+    "https://chromium.googlesource.com/chromium/src/third_party/zlib"
+    "${ANGLE_THIRDPARTY_ZLIB_COMMIT}"
 )
 
 # Generate angle_commit.h
@@ -53,17 +69,21 @@ set(ANGLE_COMMIT_HASH_SIZE 12)
 string(SUBSTRING "${ANGLE_COMMIT}" 0 ${ANGLE_COMMIT_HASH_SIZE} ANGLE_COMMIT_HASH)
 set(ANGLE_COMMIT_DATE "invalid-date")
 set(ANGLE_REVISION "${ANGLE_VERSION}")
+set(ANGLE_PROGRAM_VERSION_HASH_SIZE 16)
+string(SUBSTRING "${ANGLE_COMMIT}" 0 ${ANGLE_PROGRAM_VERSION_HASH_SIZE} ANGLE_PROGRAM_VERSION)
 configure_file("${CMAKE_CURRENT_LIST_DIR}/angle_commit.h.in" "${SOURCE_PATH}/angle_commit.h" @ONLY)
 configure_file("${CMAKE_CURRENT_LIST_DIR}/angle_commit.h.in" "${SOURCE_PATH}/src/common/angle_commit.h" @ONLY)
+configure_file("${CMAKE_CURRENT_LIST_DIR}/ANGLEShaderProgramVersion.h.in" "${SOURCE_PATH}/ANGLEShaderProgramVersion.h" @ONLY)
+configure_file("${CMAKE_CURRENT_LIST_DIR}/ANGLEShaderProgramVersion.h.in" "${SOURCE_PATH}/src/common/ANGLEShaderProgramVersion.h" @ONLY)
 file(COPY "${CMAKE_CURRENT_LIST_DIR}/unofficial-angle-config.cmake" DESTINATION "${SOURCE_PATH}")
 
-set(ANGLE_WEBKIT_BUILDSYSTEM_COMMIT "bb1da00b9ba878d228a5e9834a0767dbca2fee43")
+set(ANGLE_WEBKIT_BUILDSYSTEM_COMMIT "1da27950f8f1ec9d6cc023e460a1186a08b4e991")
 
 # Download WebKit gni-to-cmake.py conversion script
 vcpkg_download_distfile(GNI_TO_CMAKE_PY
     URLS "https://github.com/WebKit/WebKit/raw/${ANGLE_WEBKIT_BUILDSYSTEM_COMMIT}/Source/ThirdParty/ANGLE/gni-to-cmake.py"
     FILENAME "gni-to-cmake.py"
-    SHA512 9da35caf2db2e849d6cc85721ba0b77eee06b6f65a7c5314fb80483db4949b0b6e9bf4b2d4fc63613665629b24e9b052e03fb1451b09313d881297771a4f2736
+    SHA512 51ca45d4d2384d641b6672cb7cdfac200c58889b4b4cb83f1b04c1a0a2c9ab8b68f1c90d77763983684bcde674b073cfd85cfc160285332c0414d8ec6397601b
 )
 
 # Generate CMake files from GN / GNI files
@@ -78,6 +98,8 @@ set(_renderer_gn_files_to_convert
   "libANGLE/renderer/gl/BUILD.gn GL.cmake"
   "libANGLE/renderer/metal/BUILD.gn Metal.cmake"
 )
+
+x_vcpkg_get_python_packages(PYTHON_EXECUTABLE "${PYTHON3}" PACKAGES ply)
 
 foreach(_root_gni_file IN LISTS _root_gni_files_to_convert)
   separate_arguments(_file_values UNIX_COMMAND "${_root_gni_file}")
@@ -110,45 +132,29 @@ vcpkg_download_distfile(WK_ANGLE_INCLUDE_CMAKELISTS
 )
 configure_file("${WK_ANGLE_INCLUDE_CMAKELISTS}" "${SOURCE_PATH}/include/CMakeLists.txt" COPYONLY)
 
+if(NOT EXISTS "${SOURCE_PATH}/cmake")
+    file(MAKE_DIRECTORY "${SOURCE_PATH}/cmake")
+endif()
+
 vcpkg_download_distfile(WK_ANGLE_CMAKE_WEBKITCOMPILERFLAGS
     URLS "https://github.com/WebKit/WebKit/raw/${ANGLE_WEBKIT_BUILDSYSTEM_COMMIT}/Source/cmake/WebKitCompilerFlags.cmake"
     FILENAME "WebKitCompilerFlags.cmake"
-    SHA512 63f981694ae37d4c4ca4c34e2bf62b4d4602b6a1a660851304fa7a6ee834fc58fa6730eeb41ef4e075550f3c8b675823d4d00bdcd72ca869c6d5ab11196b33bb
+    SHA512 dd1b826c12051e872bfbcafde6a5c7ad1c805cc3d0d86b13c9ea2705ec732ca8151d765f304965b949fc5d0dee66676e32cef5498881edb5d84fa18715faa0bb
 )
-file(COPY "${WK_ANGLE_CMAKE_WEBKITCOMPILERFLAGS}" DESTINATION "${SOURCE_PATH}/cmake")
+file(RENAME "${WK_ANGLE_CMAKE_WEBKITCOMPILERFLAGS}" "${SOURCE_PATH}/cmake/WebKitCompilerFlags.cmake")
 
 vcpkg_download_distfile(WK_ANGLE_CMAKE_WEBKITMACROS
     URLS "https://github.com/WebKit/WebKit/raw/${ANGLE_WEBKIT_BUILDSYSTEM_COMMIT}/Source/cmake/WebKitMacros.cmake"
     FILENAME "WebKitMacros.cmake"
-    SHA512 0d126b1d1b0ca995c2ea6e51c73326db363f560f3f07912ce58c7c022d9257d27b963dac56aee0e9604ca7a3d74c5aa9f0451c243fec922fb485dd2253685ab6
+    SHA512 2d6c38ca51f31e86c2bf68c74f8565e7248b7828ffaa94e91b665fe6e168dd202696e63b879372d1ccd7e9b9f143a2424dcbd37e6bd93a3ed6a8051834feddf0
 )
-file(COPY "${WK_ANGLE_CMAKE_WEBKITMACROS}" DESTINATION "${SOURCE_PATH}/cmake")
+file(RENAME "${WK_ANGLE_CMAKE_WEBKITMACROS}" "${SOURCE_PATH}/cmake/WebKitMacros.cmake")
 
 # Copy additional custom CMake buildsystem into appropriate folders
 file(GLOB MAIN_BUILDSYSTEM "${CMAKE_CURRENT_LIST_DIR}/cmake-buildsystem/CMakeLists.txt" "${CMAKE_CURRENT_LIST_DIR}/cmake-buildsystem/*.cmake")
 file(COPY ${MAIN_BUILDSYSTEM} DESTINATION "${SOURCE_PATH}")
 file(GLOB MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake-buildsystem/cmake/*.cmake")
 file(COPY ${MODULES} DESTINATION "${SOURCE_PATH}/cmake")
-
-function(checkout_in_path PATH URL REF)
-    if(EXISTS "${PATH}")
-        return()
-    endif()
-
-    vcpkg_from_git(
-        OUT_SOURCE_PATH DEP_SOURCE_PATH
-        URL "${URL}"
-        REF "${REF}"
-    )
-    file(RENAME "${DEP_SOURCE_PATH}" "${PATH}")
-    file(REMOVE_RECURSE "${DEP_SOURCE_PATH}")
-endfunction()
-
-checkout_in_path(
-    "${SOURCE_PATH}/third_party/zlib"
-    "https://chromium.googlesource.com/chromium/src/third_party/zlib"
-    "${ANGLE_THIRDPARTY_ZLIB_COMMIT}"
-)
 
 vcpkg_cmake_configure(
     SOURCE_PATH "${SOURCE_PATH}"
