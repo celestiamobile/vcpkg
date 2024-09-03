@@ -6,12 +6,11 @@ endif()
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO LuaJIT/LuaJIT
-    REF d0e88930ddde28ff662503f9f20facf34f7265aa  #2023-01-04
-    SHA512 e4111b2d7eeb05676c62d69da13a380a51d98f082c0be575a414c09ee27ff17d101b5b4a95e1b8a1bad14d55a4d2b305718a11878fbf36e0d3d48e62ba03407f
+    REF fe71d0fb54ceadfb5b5f3b6baf29e486d97f6059  #2024-11-14
+    SHA512 4219017edd359bd5c92a37f1e3837c6ef8d9d8be89e53d80e110801e0eb7c8c2a74460376d1e3edef328e9d94f2eef9785e253027c67e1c91716e303e303a766
     HEAD_REF master
     PATCHES
         msvcbuild.patch
-        003-do-not-set-macosx-deployment-target.patch
         ${extra_patches}
 )
 
@@ -101,6 +100,9 @@ file(REMOVE_RECURSE
     "${CURRENT_PACKAGES_DIR}/share/lua"
     "${CURRENT_PACKAGES_DIR}/share/man"
 )
+
+file(GLOB PUBLIC_HEADERS "${CURRENT_PACKAGES_DIR}/include/luajit/*")
+file(COPY ${PUBLIC_HEADERS} DESTINATION "${CURRENT_PACKAGES_DIR}/include")
 
 vcpkg_copy_tools(TOOL_NAMES luajit AUTO_CLEAN)
 
