@@ -5,7 +5,7 @@ endif()
 string(REPLACE "." "-" VERSION_HYPHEN "${VERSION}")
 
 vcpkg_from_gitlab(
-    GITLAB_URL https://gitlab.freedesktop.org/
+    GITLAB_URL https://gitlab.com/
     OUT_SOURCE_PATH SOURCE_PATH
     REPO freetype/freetype
     REF "VER-${VERSION_HYPHEN}"
