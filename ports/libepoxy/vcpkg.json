@@ -9,7 +9,7 @@
   "dependencies": [
     {
       "name": "egl-registry",
-      "platform": "!osx & !windows"
+      "platform": "!osx"
     },
     {
       "name": "vcpkg-tool-meson",
