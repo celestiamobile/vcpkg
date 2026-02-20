@@ -115,4 +115,8 @@ vcpkg_copy_tools(TOOL_NAMES luajit AUTO_CLEAN)
 
 vcpkg_fixup_pkgconfig()
 
+# Copy the luajit header files to conventional location for user-wide MSBuild integration
+file(GLOB INCLUDES ${CURRENT_PACKAGES_DIR}/include/luajit/*)
+file(COPY ${INCLUDES} DESTINATION ${CURRENT_PACKAGES_DIR}/include)
+
 vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYRIGHT")
